@@ -8,9 +8,9 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        # TODO: add list properties to hold 256 bytes of memory and 8 general-purpose Registers
-        # TODO: add properties for any internal registers you need e.g. PC
-        pass
+        self.memory = []  # instructions
+        self.register = [0] * 8  # 8 registers
+        self.pc = 0  # program counter, points to currently executing instructions
 
     def load(self):
         """Load a program into memory."""
@@ -32,6 +32,15 @@ class CPU:
         for instruction in program:
             self.ram[address] = instruction
             address += 1
+
+    # access the RAM inside the CPU object
+    def ram_read(address):
+        # should accept the address to read and return the value stored there
+        print(memory[address])
+
+    def ram_write(value, address):
+        # should accept a value to writen and the adress to write it to
+        memory[address] = value
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
