@@ -2,6 +2,11 @@
 
 import sys
 
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
+MUL = 0b1010010
+
 
 class CPU:
     """Main CPU class."""
@@ -17,21 +22,39 @@ class CPU:
 
         address = 0
 
-        # For now, we've just hardcoded a program:
+        # handle command line args
+        if len(sys.argv) != 2:
+            print(f"usage: {sys.argv[0]} filename")
+            sys.exit(1)
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
+        try:
+            with open(sys.argv[1]) as f:
+                for line in f:
+                    num = line.split('#', 1)[0]
+                    if num.strip() == '':
+                        continue
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+                    # print(num)
+                    self.ram[address] = int(num, 2)  # ,2
+                    address += 1
+
+        except FileNotFoundError:
+            print(f"{sys.argv[0]}: {sys.argv[1]} not found")
+            sys.exit(2)
+
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010,  # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111,  # PRN R0
+        #     0b00000000,
+        #     0b00000001,  # HLT
+        # ]
+
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
     def ram_read(self, address):
         return self.ram[address]
@@ -45,7 +68,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        # elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -71,25 +95,32 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+
         running = True
         while running:
-
             IR = self.ram[self.PC]  # instruction register
             operand_a = self.ram[self.PC + 1]
             operand_b = self.ram[self.PC + 2]
 
             # if-else cascade
-            if IR == 0b00000001:  # HLT
-                running = False  # exit loop (HALT)
+            if IR == HLT:
+                running = False
                 self.PC += 1
 
-            elif IR == 0b10000010:  # LDI
+            elif IR == LDI:
                 self.register[operand_a] = 8
                 self.PC += 3
 
-            elif IR == 0b01000111:  # PRN
+            elif IR == PRN:
                 print(self.register[operand_a])
                 self.PC += 2
+
+            elif IR == MUL:
+                # ALU nultiply and store
+                MULVAL = alu(
+                    self, 'MUL', self.register[operand_a], self.register[operand_b])
+                print("mulval", MULVAL)
+                self.pc += 3
 
             else:
                 print(f"unknown instruction {IR}")
