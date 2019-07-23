@@ -5,7 +5,7 @@ import sys
 HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
-MUL = 0b1010010
+MUL = 0b10100010
 
 
 class CPU:
@@ -67,9 +67,10 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.register[reg_a] += self.register[reg_b]
         elif op == "MUL":
-            self.reg[reg_a] *= self.reg[reg_b]
+            self.register[reg_a] *= self.register[reg_b]
+            return self.register[reg_a]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -108,7 +109,7 @@ class CPU:
                 self.PC += 1
 
             elif IR == LDI:
-                self.register[operand_a] = 8
+                self.register[operand_a] = operand_b
                 self.PC += 3
 
             elif IR == PRN:
@@ -116,11 +117,9 @@ class CPU:
                 self.PC += 2
 
             elif IR == MUL:
-                # ALU nultiply and store
-                MULVAL = alu(
-                    self, 'MUL', self.register[operand_a], self.register[operand_b])
-                print("mulval", MULVAL)
-                self.pc += 3
+                self.alu(
+                    'MUL', operand_a, operand_b)
+                self.PC += 3
 
             else:
                 print(f"unknown instruction {IR}")
