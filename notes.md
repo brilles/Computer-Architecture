@@ -37,3 +37,58 @@ ip4v are bytes
 
 registers are like variables that are built into the CPU
 fixed number and they can only hold so much(physical contraint of CPU wires)
+
+--- Day 2 ---
+A B     A XOR B (Exclusive or - only one)
+----------------
+0 0     0
+0 1     1
+1 0     1
+1 1     0
+
+A B     A AND B
+----------------
+0 0     0
+0 1     0
+1 0     0
+1 1     1
+
+   1101011
+ & 1010010
+ ---------
+   1000010   
+
+
+    Boolean  Bitwise
+OR    or        |
+AND  and        &
+XOR   N/A       ^
+NOT   not        ~
+
+And Masking
+  101010101
+& 111100000 <- AND mask (allows us ti select a few bits in a number, everywhere 1s are in the first, they are preserved) / turn bits off
+-----------
+  101000000
+
+   10100000 AND
+ & 11000000
+----------- 
+   10000000
+   ^^
+    1000000
+     100000
+      10000
+       1000
+        100
+    0000010
+
+ir = 0b10100000 AND
+num_oprands = (ir & 0b1100000) >> 6
+mask out the bits -> shift to right
+
+setting a bit to 1:
+  0001100
+| 0000111
+---------
+  000111
