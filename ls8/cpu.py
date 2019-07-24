@@ -16,6 +16,11 @@ class CPU:
         self.ram = [0] * 256  # instructions
         self.register = [0] * 8  # 8 registers
         self.PC = 0  # program counter, points to currently executing instructions
+        self.branchtable = {}
+        self.branchtable[HLT] = self.handle_HLT
+        self.branchtable[LDI] = self.handle_LDI
+        self.branchtable[PRN] = self.handle_PRN
+        self.branchtable[MUL] = self.handle_MUL
 
     def load(self):
         """Load a program into memory."""
@@ -41,20 +46,6 @@ class CPU:
         except FileNotFoundError:
             print(f"{sys.argv[0]}: {sys.argv[1]} not found")
             sys.exit(2)
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010,  # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111,  # PRN R0
-        #     0b00000000,
-        #     0b00000001,  # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
 
     def ram_read(self, address):
         return self.ram[address]
@@ -94,33 +85,31 @@ class CPU:
 
         print()
 
+    def handle_HLT(self, a, b):
+        self.running = False
+        self.PC += 1
+
+    def handle_LDI(self, a, b):
+        self.register[a] = b
+        self.PC += 3
+
+    def handle_PRN(self, a, b):
+        print(self.register[a])
+        self.PC += 2
+
+    def handle_MUL(self, a, b):
+        self.alu('MUL', a, b)
+        self.PC += 3
+
     def run(self):
         """Run the CPU."""
-
-        running = True
-        while running:
-            IR = self.ram[self.PC]  # instruction register
+        self.running = True
+        while self.running:
+            ir = self.ram[self.PC]
             operand_a = self.ram[self.PC + 1]
             operand_b = self.ram[self.PC + 2]
-
-            # if-else cascade
-            if IR == HLT:
-                running = False
-                self.PC += 1
-
-            elif IR == LDI:
-                self.register[operand_a] = operand_b
-                self.PC += 3
-
-            elif IR == PRN:
-                print(self.register[operand_a])
-                self.PC += 2
-
-            elif IR == MUL:
-                self.alu(
-                    'MUL', operand_a, operand_b)
-                self.PC += 3
-
-            else:
-                print(f"unknown instruction {IR}")
+            try:
+                self.branchtable[ir](operand_a, operand_b)
+            except:
+                print(f"unknown instruction {ir}")
                 sys.exit(1)
