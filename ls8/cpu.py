@@ -6,9 +6,12 @@ HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
+ADD = 0b10100000
 PUSH = 0b01000101
 POP = 0b01000110
 SP = 7
+CALL = 0b01010000
+RET = 0b00010001
 
 
 class CPU:
@@ -24,8 +27,11 @@ class CPU:
         self.branchtable[LDI] = self.handle_LDI
         self.branchtable[PRN] = self.handle_PRN
         self.branchtable[MUL] = self.handle_MUL
+        self.branchtable[ADD] = self.handle_ADD
         self.branchtable[PUSH] = self.handle_PUSH
         self.branchtable[POP] = self.handle_POP
+        self.branchtable[CALL] = self.handle_CALL
+        self.branchtable[RET] = self.handle_RET
 
     def load(self):
         """Load a program into memory."""
@@ -64,6 +70,7 @@ class CPU:
 
         if op == "ADD":
             self.register[reg_a] += self.register[reg_b]
+            return self.register[reg_a]
         elif op == "MUL":
             self.register[reg_a] *= self.register[reg_b]
             return self.register[reg_a]
@@ -106,6 +113,10 @@ class CPU:
         self.alu('MUL', a, b)
         self.PC += 3
 
+    def handle_ADD(self, a, b):
+        self.alu('ADD', a, b)
+        self.PC += 3
+
     def handle_PUSH(self, a, b):
         # decrement the stack pointer
         self.register[SP] -= 1
@@ -123,6 +134,27 @@ class CPU:
         # increment SP
         self.register[SP] += 1
         self.PC += 2
+
+    # calls a subroutine at the address stored in the register.
+    def handle_CALL(self, a, b):
+        # get address of instruction right after the CALL instruction (next)
+        return_addr = self.PC + 2
+
+        # push return address on the stack
+        # decrement SP
+        self.register[SP] -= 1
+        # store the value in mem at the SP
+        self.ram[self.register[SP]] = return_addr
+
+        # set the PC to the subroutine addr
+        subroutine_addr = self.register[a]
+        self.PC = subroutine_addr
+
+    def handle_RET(self, a, b):
+        # pop the RET address off the stack
+        return_addr = self.ram[self.register[SP]]
+        self.register[SP] += 1
+        self.PC = return_addr
 
     def run(self):
         """Run the CPU."""
