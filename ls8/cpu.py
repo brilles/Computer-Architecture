@@ -16,6 +16,7 @@ CMP = 0b10100111
 JMP = 0b01010100
 JEQ = 0b01010101
 JNE = 0b01010110
+MOD = 0b10100100
 
 
 class CPU:
@@ -41,6 +42,7 @@ class CPU:
         self.branchtable[JMP] = self.handle_JMP
         self.branchtable[JEQ] = self.handle_JEQ
         self.branchtable[JNE] = self.handle_JNE
+        self.branchtable[MOD] = self.handle_MOD
 
     def load(self):
         """Load a program into memory."""
@@ -90,6 +92,9 @@ class CPU:
                 self.FL = 0b00000100
             if self.register[reg_a] > self.register[reg_b]:
                 self.FL = 0b00000010
+        elif op == "MOD":
+            self.register[reg_a] %= self.register[reg_b]
+            return self.register[reg_a]
 
     def trace(self):
         """
@@ -129,6 +134,10 @@ class CPU:
 
     def handle_ADD(self, a, b):
         self.alu('ADD', a, b)
+        self.PC += 3
+
+    def handle_MOD(self, a, b):
+        self.alu('MOD', a, b)
         self.PC += 3
 
     def handle_PUSH(self, a, b):
