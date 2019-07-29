@@ -12,6 +12,11 @@ POP = 0b01000110
 SP = 7
 CALL = 0b01010000
 RET = 0b00010001
+CMP = 0b10100111
+JMP = 0b01010100
+JEQ = 0b01010101
+JNE = 0b01010110
+MOD = 0b10100100
 
 
 class CPU:
@@ -22,6 +27,7 @@ class CPU:
         self.ram = [0] * 256  # instructions
         self.register = [0] * 8  # 8 registers
         self.PC = 0  # program counter, points to currently executing instructions
+        self.FL = 0
         self.branchtable = {}
         self.branchtable[HLT] = self.handle_HLT
         self.branchtable[LDI] = self.handle_LDI
@@ -32,6 +38,11 @@ class CPU:
         self.branchtable[POP] = self.handle_POP
         self.branchtable[CALL] = self.handle_CALL
         self.branchtable[RET] = self.handle_RET
+        self.branchtable[CMP] = self.handle_CMP
+        self.branchtable[JMP] = self.handle_JMP
+        self.branchtable[JEQ] = self.handle_JEQ
+        self.branchtable[JNE] = self.handle_JNE
+        self.branchtable[MOD] = self.handle_MOD
 
     def load(self):
         """Load a program into memory."""
@@ -74,8 +85,16 @@ class CPU:
         elif op == "MUL":
             self.register[reg_a] *= self.register[reg_b]
             return self.register[reg_a]
-        else:
-            raise Exception("Unsupported ALU operation")
+        elif op == "CMP":
+            if self.register[reg_a] == self.register[reg_b]:
+                self.FL = 0b00000001
+            if self.register[reg_a] < self.register[reg_b]:
+                self.FL = 0b00000100
+            if self.register[reg_a] > self.register[reg_b]:
+                self.FL = 0b00000010
+        elif op == "MOD":
+            self.register[reg_a] %= self.register[reg_b]
+            return self.register[reg_a]
 
     def trace(self):
         """
@@ -117,6 +136,10 @@ class CPU:
         self.alu('ADD', a, b)
         self.PC += 3
 
+    def handle_MOD(self, a, b):
+        self.alu('MOD', a, b)
+        self.PC += 3
+
     def handle_PUSH(self, a, b):
         # decrement the stack pointer
         self.register[SP] -= 1
@@ -135,8 +158,8 @@ class CPU:
         self.register[SP] += 1
         self.PC += 2
 
-    # calls a subroutine at the address stored in the register.
     def handle_CALL(self, a, b):
+        """calls a subroutine at the address stored in the register."""
         # get address of instruction right after the CALL instruction (next)
         return_addr = self.PC + 2
 
@@ -155,6 +178,36 @@ class CPU:
         return_addr = self.ram[self.register[SP]]
         self.register[SP] += 1
         self.PC = return_addr
+
+        self.branchtable[CMP] = self.handle_CMP
+        self.branchtable[JMP] = self.handle_JMP
+        self.branchtable[JEQ] = self.handle_JEQ
+        self.branchtable[JNE] = self.handle_JNE
+
+    def handle_CMP(self, a, b):
+        """ Compares the values in two registers (handled by ALU)"""
+        self.alu('CMP', a, b)
+        self.PC += 3
+
+    def handle_JMP(self, a, b):
+        "Jump to the address stored in the given register"
+        # set the PC to the JMP addr
+        jump_addr = self.register[a]
+        self.PC = jump_addr
+
+    def handle_JEQ(self, a, b):
+        "IF FL is true"
+        if self.FL == 1:
+            self.handle_JMP(a, b)
+        else:
+            self.PC += 2
+
+    def handle_JNE(self, a, b):
+        "If FL is false"
+        if self.FL != 1:
+            self.handle_JMP(a, b)
+        else:
+            self.PC += 2
 
     def run(self):
         """Run the CPU."""
